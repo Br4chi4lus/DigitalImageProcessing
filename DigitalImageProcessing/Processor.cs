@@ -29,6 +29,15 @@ namespace DigitalImageProcessing
             int numberOfMatrices = 1;
             int matrixSize = 3;
             int[,] matrices;
+            if (reader.IsWindowsBitmap() == false)
+            {
+                reader.Close();
+                writer.Close();
+                File.Delete(newFileName);
+                NiceTry niceTry = new NiceTry();
+                niceTry.ShowDialog();
+                return;
+            }
             if (reader.GetBitCount() != 24)
             {
                 reader.Close();

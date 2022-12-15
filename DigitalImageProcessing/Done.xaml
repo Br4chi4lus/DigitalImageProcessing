@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Done" Height="140" Width="300">
     <Grid>
-        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top">File has been processed</TextBlock>
+        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top">File has been processed!</TextBlock>
         <TextBlock Name="time" Text="" Margin="0,20,0,40" HorizontalAlignment="Center" VerticalAlignment="Top"></TextBlock>
         <Button Name="ok" Width="60" Height="20" Click="ok_Click" Margin="0,50,0,0">OK</Button>
     </Grid>

@@ -35,6 +35,19 @@ namespace DigitalImageProcessing
             fs.Read(header, 0, 14);
             return header;
         }
+        public bool IsWindowsBitmap()
+        {
+            byte[] tmp = new byte[2];
+            fs.Position = 0;
+            fs.Read(tmp, 0, 2);
+            short t = BitConverter.ToInt16(tmp, 0);
+            short bm = 0x4d42;                                          //hex for MB
+            if (bm == t)
+            {
+                return true;
+            }
+            return false;
+        }
         public byte[] ReadDIBHeader()
         {
             byte[] header = new byte[offset - 14];

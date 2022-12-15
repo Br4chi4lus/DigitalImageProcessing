@@ -1,0 +1,29 @@
+﻿<Window x:Class="DigitalImageProcessing.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DigitalImageProcessing"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="500" Width="400">
+    <Grid>
+        <StackPanel Name="panel" Margin="0,60,0,0" VerticalAlignment="Top" HorizontalAlignment="Center"
+ Width="160" Height="400">
+            <Label Content="Pick a BMP file:"  Height="26" Target="{Binding ElementName=button}" ></Label>
+            <Button HorizontalAlignment="Center" VerticalAlignment="Top"  Width="160" Name="button" Click="button_Click" >Open File</Button>
+            <Image Name="imgviewer" Width="160" Height="125"/>
+            <Label Content="Pick an algorithm:" Target="{Binding ElementName=methods}"   Height="26"></Label>
+            <ComboBox Name="methods" Width="160" Height="20" SelectedValuePath="Content">
+                <ComboBoxItem Name="roberts" >Roberts Cross</ComboBoxItem>
+                <ComboBoxItem Name="prewitt" >Prewitt</ComboBoxItem>
+                <ComboBoxItem Name="lowpass" >Low-pass filter</ComboBoxItem>
+                <ComboBoxItem Name="highpass" >High-pass filter</ComboBoxItem>
+            </ComboBox>
+            <Label Content="Output file name:" Target="{Binding ElementName=name}" Margin="0,30,0,0"></Label>
+            <TextBox Name="name"></TextBox>
+            <Label Content="Pick output file directory:" Target="{Binding ElementName=directory}"></Label>
+            <Button Name="directory" Click="directory_Click" >Pick directory</Button>
+            <Button Name="process"  Click="process_Click"  Margin="0,30,0,0">Process</Button>
+        </StackPanel>
+    </Grid>
+</Window>

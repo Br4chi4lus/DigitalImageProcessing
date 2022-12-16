@@ -15,7 +15,7 @@ namespace DigitalImageProcessing
         private Writer writer;
         private Method method;
         private String newFileName;
-        private Pixel[][] pixels;
+        private Pixel[][]? pixels;
         public Processor(String name, String newName, Method method, String path)
         {
             this.method = method;
@@ -84,8 +84,8 @@ namespace DigitalImageProcessing
             writer.WriteHeader(reader.ReadHeader());
             writer.WriteDIBHeader(reader.ReadDIBHeader());
             for(int i = 0; i < matrixSize; ++i)                                                                                 //read initial lines we will swap them after
-            {                                                                                                                   //every iteration
-                pixels[i] = reader.ReadLineOfPixels(i - matrixSize / 2);
+            {                                                                                                                   //every iteration e.g. with mask 3x3
+                pixels[i] = reader.ReadLineOfPixels(i - matrixSize / 2);                                                        // we start with lines -1,0,1
             }
             for (int i = 0; i < reader.GetHeight(); ++i)
             {
@@ -94,7 +94,7 @@ namespace DigitalImageProcessing
                     Pixel pixel = CalculatePixel(numberOfMatrices, matrixSize, matrices, divider, j, i);
                     writer.WritePixel(pixel, j, i);
                 }
-                for(int j = 0; j < matrixSize; ++j)
+                for(int j = 0; j < matrixSize; ++j)                                                                             //swaping lines and reading a new one
                 {
                     if (j == matrixSize - 1)
                     {
@@ -116,7 +116,7 @@ namespace DigitalImageProcessing
         public Pixel CalculatePixel(int numberOfMatrices, int matrixSize, int[,] matrices, int divider, int x, int y)
         {
             byte[] tmp = new byte[3];
-            int x1, y1, middleIndex;
+            int x1, middleIndex;
             middleIndex = matrixSize * matrixSize / 2;
             int[] sumB = new int[numberOfMatrices];
             int[] sumG = new int[numberOfMatrices];
@@ -130,8 +130,6 @@ namespace DigitalImageProcessing
             for (int i = 0; i < matrixSize * matrixSize; ++i)
             {
                 x1 = x - (middleIndex % matrixSize - i % matrixSize);
-                y1 = y - (middleIndex / matrixSize - i / matrixSize);
-                //Pixel pxl = reader.ReadPixel(x1, y1);
                 Pixel pxl;
                 if (x1>0 && x1 < reader.GetWidth())
                 {

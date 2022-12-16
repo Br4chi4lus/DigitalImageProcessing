@@ -67,21 +67,7 @@ namespace DigitalImageProcessing
         public int GetHeight()
         {
             return height;
-        }
-        public Pixel ReadPixel(int x, int y)
-        {
-            if (x < 0 || y < 0 || x >= width || y >= height)
-            {
-                return new Pixel(0, 0, 0);
-            }
-            else
-            {
-                byte[] tmp = new byte[3];
-                fs.Position = width * y * 3 + y * ((4 - width * 3 % 4) % 4) + x * 3 + offset;
-                fs.Read(tmp, 0, 3);
-                return new Pixel(tmp[2], tmp[1], tmp[0]);
-            }
-        }        
+        }       
         public int GetBitCount()
         {
             fs.Position = 28;

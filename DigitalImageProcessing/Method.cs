@@ -10,7 +10,10 @@ namespace DigitalImageProcessing
     {
         Roberts,
         Prewitt,
+        Sobel,
+        Scharr,
         Lowpass,
-        Highpass
+        Highpass,
+        Median
     }
 }

@@ -64,11 +64,20 @@ namespace DigitalImageProcessing
                 case "Prewitt":
                     method = Method.Prewitt;
                     break;
+                case "Sobel":
+                    method = Method.Sobel;
+                    break;
+                case "Scharr":
+                    method = Method.Scharr;
+                    break;
                 case "Low-pass filter":
                     method = Method.Lowpass;
                     break;
                 case "High-pass filter":
                     method = Method.Highpass;
+                    break;
+                case "Median filter":
+                    method = Method.Median;
                     break;
                 default:
                     return;

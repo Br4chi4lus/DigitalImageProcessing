@@ -16,8 +16,11 @@
             <ComboBox Name="methods" Width="160" Height="20" SelectedValuePath="Content">
                 <ComboBoxItem Name="roberts" >Roberts Cross</ComboBoxItem>
                 <ComboBoxItem Name="prewitt" >Prewitt</ComboBoxItem>
+                <ComboBoxItem Name="sobel" >Sobel</ComboBoxItem>
+                <ComboBoxItem Name="scharr" >Scharr</ComboBoxItem>
                 <ComboBoxItem Name="lowpass" >Low-pass filter</ComboBoxItem>
                 <ComboBoxItem Name="highpass" >High-pass filter</ComboBoxItem>
+                <ComboBoxItem Name="median" >Median filter</ComboBoxItem>
             </ComboBox>
             <Label Content="Output file name:" Target="{Binding ElementName=name}" Margin="0,30,0,0"></Label>
             <TextBox Name="name"></TextBox>

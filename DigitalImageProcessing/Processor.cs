@@ -15,6 +15,7 @@ namespace DigitalImageProcessing
         private Writer writer;
         private Method method;
         private String newFileName;
+        private Pixel[][] pixels;
         public Processor(String name, String newName, Method method, String path)
         {
             this.method = method;
@@ -79,14 +80,30 @@ namespace DigitalImageProcessing
                     matrices = new int[1, 9] { { 1, 1, 1, 1, 4, 1, 1, 1, 1 } };
                     break;
             }
+            pixels = new Pixel[matrixSize][];
             writer.WriteHeader(reader.ReadHeader());
             writer.WriteDIBHeader(reader.ReadDIBHeader());
+            for(int i = 0; i < matrixSize; ++i)                                                                                 //read initial lines we will swap them after
+            {                                                                                                                   //every iteration
+                pixels[i] = reader.ReadLineOfPixels(i - matrixSize / 2);
+            }
             for (int i = 0; i < reader.GetHeight(); ++i)
             {
                 for (int j = 0; j < reader.GetWidth(); ++j)
                 {
                     Pixel pixel = CalculatePixel(numberOfMatrices, matrixSize, matrices, divider, j, i);
                     writer.WritePixel(pixel, j, i);
+                }
+                for(int j = 0; j < matrixSize; ++j)
+                {
+                    if (j == matrixSize - 1)
+                    {
+                        pixels[j]=reader.ReadLineOfPixels(i + matrixSize / 2);
+                    }
+                    else
+                    {
+                        pixels[j] = pixels[j+1];
+                    }
                 }
             }
             writer.Close();
@@ -112,11 +129,20 @@ namespace DigitalImageProcessing
             }
             for (int i = 0; i < matrixSize * matrixSize; ++i)
             {
-                for (int j = 0; j < numberOfMatrices; ++j)
+                x1 = x - (middleIndex % matrixSize - i % matrixSize);
+                y1 = y - (middleIndex / matrixSize - i / matrixSize);
+                //Pixel pxl = reader.ReadPixel(x1, y1);
+                Pixel pxl;
+                if (x1>0 && x1 < reader.GetWidth())
                 {
-                    x1 = x - (middleIndex % matrixSize - i % matrixSize);
-                    y1 = y - (middleIndex / matrixSize - i / matrixSize);
-                    Pixel pxl = reader.ReadPixel(x1, y1);
+                    pxl = pixels[i / matrixSize][x1];
+                }
+                else
+                {
+                    pxl = new Pixel(0, 0, 0);
+                }
+                for (int j = 0; j < numberOfMatrices; ++j)
+                {                   
                     sumB[j] += pxl.B * matrices[j, i];
                     sumG[j] += pxl.G * matrices[j, i];
                     sumR[j] += pxl.R * matrices[j, i];

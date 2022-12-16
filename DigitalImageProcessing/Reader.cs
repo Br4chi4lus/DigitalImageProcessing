@@ -40,8 +40,8 @@ namespace DigitalImageProcessing
             byte[] tmp = new byte[2];
             fs.Position = 0;
             fs.Read(tmp, 0, 2);
-            short t = BitConverter.ToInt16(tmp, 0);
-            short bm = 0x4d42;                                          //hex for MB
+            short t = BitConverter.ToInt16(tmp, 0);                                                 //tmp = {byte1,byte0} should be M,B for bitmap
+            short bm = 'M' * 256 + 'B';                                          
             if (bm == t)
             {
                 return true;
@@ -81,7 +81,7 @@ namespace DigitalImageProcessing
                 fs.Read(tmp, 0, 3);
                 return new Pixel(tmp[2], tmp[1], tmp[0]);
             }
-        }
+        }        
         public int GetBitCount()
         {
             fs.Position = 28;
@@ -93,6 +93,32 @@ namespace DigitalImageProcessing
         public void Close()
         {
             this.fs.Close();
+        }
+        public Pixel[] ReadLineOfPixels(int y)
+        {
+            Pixel[] pixels = new Pixel[width];
+            byte[] tmp = new byte[width * 3];            
+            if (y >= 0 && y < height)
+            {
+                fs.Position = width * y * 3 + y * ((4 - width * 3 % 4) % 4) + offset;
+                fs.Read(tmp, 0, width * 3);
+                for (int i = 0; i < width; ++i)
+                {
+                    pixels[i].B = tmp[i * 3];
+                    pixels[i].G = tmp[i * 3 + 1];
+                    pixels[i].R = tmp[i * 3 + 2];
+                }
+            }
+            else
+            {
+                for (int i = 0; i < width; ++i)
+                {
+                    pixels[i].B = 0;
+                    pixels[i].G = 0;
+                    pixels[i].R = 0;
+                }
+            }
+                return pixels;
         }
     }
 }

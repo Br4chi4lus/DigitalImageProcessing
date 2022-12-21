@@ -16,12 +16,15 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Forms;
 using OpenFileDialog = System.Windows.Forms.OpenFileDialog;
+using System.Threading;
 
 namespace DigitalImageProcessing
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    public delegate void CallInfoWindowDel(Status status, double ms);
+    public delegate void CallUpdateProgress(double progress);
     public partial class MainWindow : Window
     {
         private String fileName = "";
@@ -50,10 +53,10 @@ namespace DigitalImageProcessing
         {
             if (path == "" || fileName == "" || name.Text == "" || methods.SelectedValue==null)
             {
-                Error error = new Error();
-                error.ShowDialog();
+                OpenInfoWindow(Status.Error, 0);
                 return;
             }
+            process.IsEnabled = false;
             String m = methods.SelectedValue.ToString();
             Method method = Method.Roberts;
             switch (m)
@@ -79,12 +82,22 @@ namespace DigitalImageProcessing
                 case "Median filter":
                     method = Method.Median;
                     break;
+                case "Gauss filter":
+                    method = Method.Gauss;
+                    break;
+                case "RGB to Grayscale(24bit)":
+                    method = Method.Grayscale;
+                    break;
+                case "RGB to Grayscale(8bit)":
+                    method = Method.Grayscale2;
+                    break;
                 default:
                     return;
             }
             
-            Processor processor = new Processor(fileName, name.Text, method,path);
-            processor.ProcessImage();
+            Processor processor = new Processor(this,fileName, name.Text, method,path);
+            Thread thread = new Thread(processor.ProcessImage);
+            thread.Start();           
         }
 
         private void directory_Click(object sender, RoutedEventArgs e)
@@ -95,6 +108,15 @@ namespace DigitalImageProcessing
             {
                 path = folderBrowser.SelectedPath;
             }
+        }
+        public static void OpenInfoWindow(Status status, double ms)
+        {
+            InfoWindow info = new InfoWindow(status, ms);
+            info.ShowDialog();
+        }
+        public void UpdateProgress(double prog)
+        {
+            progress.Value = prog;
         }
     }
 }

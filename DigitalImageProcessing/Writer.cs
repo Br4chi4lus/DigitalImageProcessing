@@ -39,11 +39,63 @@ namespace DigitalImageProcessing
             fs.WriteByte(pixel.B);
             fs.WriteByte(pixel.G);
             fs.WriteByte(pixel.R);
-            byte zero = 0;
-            for (int i = 0; i < zeros; i++)
+            
+            if (x == width - 1)
             {
-                fs.WriteByte(zero);
+                byte zero = 0;
+                for (int i = 0; i < zeros; i++)
+                {
+                    fs.WriteByte(zero);
+                }
             }
+        }
+        public void Write8BitPixel(byte n, int x, int y)
+        {
+            int zeros = (4 - width * 3 % 4) % 4;
+            fs.Position = offset + y * (width + zeros) + x;
+            fs.WriteByte(n);
+            if (x == width - 1)
+            {
+                byte zero = 0;
+                for(int i=0;i<zeros;i++)
+                {
+                    fs.WriteByte(zero);
+                }
+            }
+        }
+        public void ChangeHeaderFor8Bit()
+        {
+            fs.Position = 2;
+            int zeros = (4 - width * 3 % 4) % 4;
+            int newSize = offset + 256 * 4 + height * (width + zeros);
+            fs.Write(BitConverter.GetBytes(newSize));
+            fs.Position = 10;
+            int newOffset = offset + 256 * 4;
+            fs.Write(BitConverter.GetBytes(newOffset));
+            fs.Position = 28;
+            short newBitCount = 8;
+            fs.Write(BitConverter.GetBytes(newBitCount));
+            fs.Position = 34;
+            int newImageSize = height * (width + zeros);
+            fs.Write(BitConverter.GetBytes(newImageSize));
+            fs.Position = 46;
+            int newColorsUsed = 256;
+            fs.Write(BitConverter.GetBytes(newColorsUsed));
+            WriteGrayscaleColorTable();
+        }
+        public void WriteGrayscaleColorTable()
+        {
+            fs.Position = offset;
+            byte[] tmp = new byte[4];
+            tmp[3] = 0;
+            for(int i = 0; i < 256; ++i)
+            {
+                tmp[0]=(byte)i;
+                tmp[1]=(byte)i;
+                tmp[2]=(byte)i;
+                fs.Write(tmp, 0, 4);
+            }
+            offset += 256 * 4;
         }
         public void Close()
         {

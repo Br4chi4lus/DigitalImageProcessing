@@ -7,19 +7,28 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.IO;
 using Path = System.IO.Path;
+using System.Windows.Threading;
+using System.Windows;
+
 namespace DigitalImageProcessing
 {
     class Processor
     {
+        private MainWindow mainWindow;
         private Reader reader;
         private Writer writer;
         private Method method;
         private String newFileName;
         private Pixel[][]? pixels;
-        public Processor(String name, String newName, Method method, String path)
+        public Processor(MainWindow mw, String name, String newName, Method method, String path)
         {
+            this.mainWindow = mw;
             this.method = method;
             reader = new Reader(File.OpenRead(name));
+            if(Path.GetFileName(name).Equals(newName + ".bmp"))
+            {
+                newName = newName + "(1)";
+            }
             newFileName = path + "\\" + newName + ".bmp";
             writer = new Writer(File.Create(newFileName), reader.GetOffset(), reader.GetWidth(), reader.GetHeight());
         }
@@ -29,14 +38,16 @@ namespace DigitalImageProcessing
             int divider = 1;
             int numberOfMatrices = 1;
             int matrixSize = 3;
-            int[,] matrices;
+            int[,] matrices = null;
+            double[] matrix = null; 
+            CallInfoWindowDel callInfo;
             if (reader.IsWindowsBitmap() == false)
             {
                 reader.Close();
                 writer.Close();
                 File.Delete(newFileName);
-                NiceTry niceTry = new NiceTry();
-                niceTry.ShowDialog();
+                callInfo = MainWindow.OpenInfoWindow;
+                App.Current.Dispatcher.BeginInvoke(new Action(() => callInfo(Status.Error2, 0)));
                 return;
             }
             if (reader.GetBitCount() != 24)
@@ -44,8 +55,8 @@ namespace DigitalImageProcessing
                 reader.Close();
                 writer.Close();
                 File.Delete(newFileName);
-                Error error = new Error();
-                error.ShowDialog();
+                callInfo = MainWindow.OpenInfoWindow;
+                App.Current.Dispatcher.BeginInvoke(new Action(() => callInfo(Status.Error, 0)));
                 return;
             }
 
@@ -85,7 +96,13 @@ namespace DigitalImageProcessing
                     break;
                 case Method.Median:
                     matrixSize = 3;
-                    matrices = null;
+                    break;
+                case Method.Gauss:
+                    matrixSize = 23;
+                    matrix = CalculateGaussMatrix(matrixSize, 5);
+                    break;
+                case Method.Grayscale:
+                    matrixSize = 1;
                     break;
                 default:
                     divider = 12;
@@ -97,24 +114,51 @@ namespace DigitalImageProcessing
             pixels = new Pixel[matrixSize][];
             writer.WriteHeader(reader.ReadHeader());
             writer.WriteDIBHeader(reader.ReadDIBHeader());
+            byte pxl;
             for(int i = 0; i < matrixSize; ++i)                                                                                 //read initial lines we will swap them after
             {                                                                                                                   //every iteration e.g. with mask 3x3
                 pixels[i] = reader.ReadLineOfPixels(i - matrixSize / 2);                                                        // we start with lines -1,0,1
             }
+            if(method == Method.Grayscale2)
+            {
+                writer.ChangeHeaderFor8Bit();
+            }
+            CallUpdateProgress callUpdate = mainWindow.UpdateProgress;
             for (int i = 0; i < reader.GetHeight(); ++i)
             {
+                double progress = i * 100 / reader.GetHeight();
+
+                App.Current.Dispatcher.Invoke(new Action (() => callUpdate(progress)));
                 for (int j = 0; j < reader.GetWidth(); ++j)
                 {
                     Pixel pixel;
                     if (method == Method.Median)
                     {
                         pixel = CalculateMedianPixel(matrixSize, j, i);
+                        writer.WritePixel(pixel, j, i);
+                    }
+                    else if (method == Method.Gauss)
+                    {
+                        pixel = CalculateGaussPixel(matrixSize,matrix,j, i);
+                        writer.WritePixel(pixel, j, i);
+                    }
+                    else if(method == Method.Grayscale2)
+                    {
+                        pxl = CalculateRGBToGrayscalePixel(j);
+                        writer.Write8BitPixel(pxl, j, i);
+                    }
+                    else if (method == Method.Grayscale)
+                    {
+                        pxl = CalculateRGBToGrayscalePixel(j);
+                        pixel = new Pixel(pxl, pxl, pxl);
+                        writer.WritePixel(pixel, j, i);
                     }
                     else
                     {
                         pixel = CalculatePixel(numberOfMatrices, matrixSize, matrices, divider, j, i);
+                        writer.WritePixel(pixel, j, i);
                     }
-                    writer.WritePixel(pixel, j, i);
+                    
                 }
                 for(int j = 0; j < matrixSize; ++j)                                                                             //swaping lines and reading a new one
                 {
@@ -132,8 +176,10 @@ namespace DigitalImageProcessing
             reader.Close();
             long end = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             double diff = (end - start)/1000;
-            Done done = new Done(diff);
-            done.ShowDialog();
+            
+            callInfo = MainWindow.OpenInfoWindow;
+            App.Current.Dispatcher.BeginInvoke(new Action(()=>callInfo(Status.Done, diff)));
+            App.Current.Dispatcher.BeginInvoke(new Action(() => { mainWindow.process.IsEnabled = true; }));
         }
         public Pixel CalculatePixel(int numberOfMatrices, int matrixSize, int[,] matrices, int divider, int x, int y)
         {
@@ -287,7 +333,57 @@ namespace DigitalImageProcessing
             Array.Sort(reds);
             Array.Sort(greens);
             Array.Sort(blues);
-            Pixel pixel = new Pixel((byte)reds[realPixels / 2], (byte)greens[realPixels / 2], (byte)blues[realPixels / 2]);
+            Pixel pixel = new Pixel((byte)reds[realPixels/2], (byte)greens[realPixels / 2], (byte)blues[realPixels / 2]);
+            return pixel;
+        }
+        private double[] CalculateGaussMatrix(int matrixSize, double sigma) 
+        {
+            double[] matrix = new double[matrixSize*matrixSize];
+            double sum = 0;
+            for(int i = -matrixSize/2; i < matrixSize / 2 + 1; ++i)
+            {
+                for (int j = -matrixSize / 2; j < matrixSize / 2 + 1; ++j)
+                {
+                    matrix[(i + matrixSize / 2) * matrixSize + (j + matrixSize / 2)] = 1 * Math.Exp(-((j * j + i * i) / (2 * sigma * sigma))) / (2 * Math.PI * sigma * sigma);
+                    sum += matrix[(i + matrixSize / 2) * matrixSize + (j + matrixSize / 2)];
+                }
+            }
+            
+            return matrix;
+        }
+        private Pixel CalculateGaussPixel(int matrixSize, double[] matrix, int x, int y)
+        {
+            Pixel pixel;
+            double sumB = 0, sumG = 0, sumR = 0;
+            int middleIndex = matrixSize * matrixSize / 2;
+            int x1;
+            for (int i = 0; i < matrixSize * matrixSize; ++i)
+            {
+                x1 = x - (middleIndex % matrixSize - i % matrixSize);
+                Pixel pxl;
+                if (x1 > 0 && x1 < reader.GetWidth())
+                {
+                    pxl = pixels[i / matrixSize][x1];
+                }
+                else
+                {
+                    pxl = new Pixel(0, 0, 0);
+                }                
+                sumB += pxl.B * matrix[i];
+                sumG += pxl.G * matrix[i];
+                sumR += pxl.R * matrix[i];
+            }
+            pixel = new Pixel((byte)sumR,(byte)sumG,(byte)sumB);
+
+            return pixel;
+        }
+        private byte CalculateRGBToGrayscalePixel(int x)
+        {
+            Pixel tmp;
+            byte pixel;
+            tmp = pixels[0][x];
+            int t = (int)(0.299 * tmp.R + 0.587 * tmp.G + 0.114 * tmp.B);
+            pixel = (byte)t;
             return pixel;
         }
     }

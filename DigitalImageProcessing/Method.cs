@@ -14,6 +14,9 @@ namespace DigitalImageProcessing
         Scharr,
         Lowpass,
         Highpass,
-        Median
+        Median,
+        Gauss,
+        Grayscale,
+        Grayscale2
     }
 }

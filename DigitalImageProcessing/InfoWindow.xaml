@@ -1,0 +1,14 @@
+﻿<Window x:Class="DigitalImageProcessing.InfoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DigitalImageProcessing"
+        mc:Ignorable="d"
+        Title="InfoWindow" Height="160" Width="300">
+    <Grid>
+        <TextBlock Name="info" HorizontalAlignment="Center" Margin="0,15,0,42" ></TextBlock>
+        <TextBlock Name="time" Text="" Margin="0,40,0,40" HorizontalAlignment="Center" VerticalAlignment="Top"></TextBlock>
+        <Button Name="ok" Width="60" Height="20" Margin="0,50,0,0" Click="ok_Click">OK</Button>
+    </Grid>
+</Window>

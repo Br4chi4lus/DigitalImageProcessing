@@ -106,5 +106,6 @@ namespace DigitalImageProcessing
             }
                 return pixels;
         }
+
     }
 }

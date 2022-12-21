@@ -7,4 +7,4 @@
 - Conversion to Grayscale - 24bit/8bit
 
 App accepts 24-bit .bmp files only.
-Processing can use mask of various sizes.
+Processing can use mask of various sizes(currently sizes are hardcoded.

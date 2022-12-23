@@ -72,7 +72,7 @@ namespace DigitalImageProcessing
                     matrixSize = 2;                                                                                             //because image is upside down
                     matrices = new int[2][];                                                                                    //now we dont have to care about it anymore
                     matrices[0] = new int[4] { 0, -1, 1, 0 };
-                    matrices[1] = new int[4] { -1, 0, 0, 1 };                                               
+
                     break;
                 case Method.Prewitt:
                     numberOfMatrices = 2;

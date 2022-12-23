@@ -70,9 +70,9 @@ namespace DigitalImageProcessing
                 case Method.Roberts:
                     numberOfMatrices = 2;                                                                                       //all matrices are upside down
                     matrixSize = 2;                                                                                             //because image is upside down
-                    matrices = new int[2][];
+                    matrices = new int[2][];                                                                                    //now we dont have to care about it anymore
                     matrices[0] = new int[4] { 0, -1, 1, 0 };
-                    matrices[0] = new int[4] { -1, 0, 0, 1 };                                               //now we dont have to care about it anymore
+                    matrices[0] = new int[4] { -1, 0, 0, 1 };                                               
                     break;
                 case Method.Prewitt:
                     numberOfMatrices = 2;
@@ -148,10 +148,10 @@ namespace DigitalImageProcessing
             CallEnableProcessButton callEnable = mainWindow.EnableProcessButton;
             App.Current.Dispatcher.BeginInvoke(new Action(() => callEnable()));
         }
-        public void CalculateAllPixels(int numberOfMatrices, int matrixSize, int[][] matrices, int divider, double[] matrix)
+        private void CalculateAllPixels(int numberOfMatrices, int matrixSize, int[][] matrices, int divider, double[] matrix)
         {
             byte pxl;
-            for (int i = 0; i < matrixSize; ++i)                                                                                 //read initial lines we will swap them after
+            for (int i = 0; i < matrixSize; ++i)                                                                                //read initial lines we will swap them after
             {                                                                                                                   //every iteration e.g. with mask 3x3
                 pixels[i] = reader.ReadLineOfPixels(i - matrixSize / 2);                                                        // we start with lines -1,0,1
             }
@@ -186,7 +186,7 @@ namespace DigitalImageProcessing
                     }
                     else
                     {
-                        pixel = CalculatePixel(numberOfMatrices, matrixSize, matrices, divider, j, i);
+                        pixel = CalculatePixel(numberOfMatrices, matrixSize, matrices, divider, j, i);                          //common method for egde detection and some filters                      
                         writer.WritePixel(pixel, j, i);
                     }
 
@@ -204,9 +204,9 @@ namespace DigitalImageProcessing
                 }
             }
         }
-        public Pixel CalculatePixel(int numberOfMatrices, int matrixSize, int[][] matrices, int divider, int x, int y)
+        private Pixel CalculatePixel(int numberOfMatrices, int matrixSize, int[][] matrices, int divider, int x, int y)
         {
-            byte[] tmp = new byte[3];
+            byte[] tmp;
             int x1, middleIndex;
             middleIndex = matrixSize * matrixSize / 2;
             double[] sumB = new double[numberOfMatrices];
@@ -243,6 +243,13 @@ namespace DigitalImageProcessing
                 sumG[i] /= divider;
                 sumR[i] /= divider;
             }
+            tmp = ConvertRGBValues(numberOfMatrices, sumR, sumG, sumB);
+            Pixel pixel = new Pixel(tmp[2], tmp[1], tmp[0]);
+            return pixel;
+        }
+        private byte[] ConvertRGBValues(int numberOfMatrices, double[] sumR, double[] sumG, double[] sumB)
+        {
+            byte[] tmp = new byte[3];
             if (numberOfMatrices != 1)
             {
                 int sB = 0, sG = 0, sR = 0;
@@ -260,20 +267,20 @@ namespace DigitalImageProcessing
                 {
                     sB = 255;
                 }
-                    tmp[2] = (byte)sB;
+                tmp[2] = (byte)sB;
                 if (sG > 255)
                 {
                     sG = 255;
                 }
-                    tmp[1] = (byte)sG;
+                tmp[1] = (byte)sG;
                 if (sR > 255)
                 {
                     sR = 255;
                 }
-                    tmp[0] = (byte)sR;
+                tmp[0] = (byte)sR;
             }
             else
-            {                                                                                                                           
+            {
                 if (sumB[0] < 0)
                 {
                     sumB[0] = 0;
@@ -302,10 +309,9 @@ namespace DigitalImageProcessing
                 tmp[1] = (byte)sumG[0];
                 tmp[2] = (byte)sumR[0];
             }
-            Pixel pixel = new Pixel(tmp[2], tmp[1], tmp[0]);
-            return pixel;
+            return tmp;
         }
-        public Pixel CalculateMedianPixel( int matrixSize, int x, int y)
+        private Pixel CalculateMedianPixel( int matrixSize, int x, int y)
         {
             int realPixels, x1 ,y1, middleIndex;
             realPixels = matrixSize * matrixSize;

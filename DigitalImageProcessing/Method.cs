@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DigitalImageProcessing
 {
-    enum Method
+    public enum Method
     {
         Roberts,
         Prewitt,

@@ -1,0 +1,22 @@
+﻿<Window x:Class="DigitalImageProcessing.SelectFilterValue"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:DigitalImageProcessing"
+        mc:Ignorable="d"
+        Title="SelectFilterValue" Height="250" Width="400">
+    <Grid>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top">
+            <TextBlock HorizontalAlignment="Center">Select Filter you want to use:</TextBlock>
+            <ComboBox Name="filters" HorizontalAlignment="Center" Width="300">
+                <ComboBoxItem Name="filter1">Filter1 (3x3)</ComboBoxItem>
+                <ComboBoxItem Name="filter2">Filter2 (3x3)</ComboBoxItem>
+                <ComboBoxItem Name="filter3">Filter3 (3x3)</ComboBoxItem>
+                <ComboBoxItem Name="filter4">Filter4 (3x3)</ComboBoxItem>
+                <ComboBoxItem Name="filter5">Filter5 (5x5)</ComboBoxItem>
+            </ComboBox>
+            <Button HorizontalAlignment="Center" Margin="0,30,0,0" Click="Button_Click">Save filter</Button>
+        </StackPanel>
+    </Grid>
+</Window>

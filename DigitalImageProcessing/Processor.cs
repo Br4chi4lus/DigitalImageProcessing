@@ -20,17 +20,23 @@ namespace DigitalImageProcessing
         private Method method;
         private String newFileName;
         private Pixel[][]? pixels;
-        public Processor(MainWindow mw, String name, String newName, Method method, String path)
+        private int mSize;
+        private double sValue;
+        private int[] matrix1;
+        public Processor(MainWindow mw, String name, String newName, Method method, String path, int mSize, double sValue, int[] matrix1)
         {
+            this.matrix1 = matrix1;
             this.mainWindow = mw;
             this.method = method;
             reader = new Reader(File.OpenRead(name));
-            if(Path.GetFileName(name).Equals(newName + ".bmp"))
+            if (Path.GetFileName(name).Equals(newName + ".bmp"))
             {
                 newName = newName + "(1)";
             }
             newFileName = path + "\\" + newName + ".bmp";
             writer = new Writer(File.Create(newFileName), reader.GetOffset(), reader.GetWidth(), reader.GetHeight());
+            this.mSize = mSize;
+            this.sValue = sValue;
         }
         public void ProcessImage()
         {
@@ -38,7 +44,7 @@ namespace DigitalImageProcessing
             int divider = 1;
             int numberOfMatrices = 1;
             int matrixSize = 3;
-            int[,] matrices = null;
+            int[][] matrices = null;
             double[] matrix = null; 
             CallInfoWindowDel callInfo;
             if (reader.IsWindowsBitmap() == false)
@@ -59,76 +65,101 @@ namespace DigitalImageProcessing
                 App.Current.Dispatcher.BeginInvoke(new Action(() => callInfo(Status.Error, 0)));
                 return;
             }
-
             switch (method)
             {
                 case Method.Roberts:
                     numberOfMatrices = 2;                                                                                       //all matrices are upside down
                     matrixSize = 2;                                                                                             //because image is upside down
-                    matrices = new int[2, 4] { { 0, -1, 1, 0 }, { -1, 0, 0, 1 } };                                              //now we dont have to care about it anymore
+                    matrices = new int[2][];
+                    matrices[0] = new int[4] { 0, -1, 1, 0 };
+                    matrices[0] = new int[4] { -1, 0, 0, 1 };                                               //now we dont have to care about it anymore
                     break;
                 case Method.Prewitt:
                     numberOfMatrices = 2;
                     matrixSize = 3;
-                    matrices = new int[2, 9] { { -1, 0, 1, -1, 0, 1, -1, 0, 1 }, { -1, -1, -1, 0, 0, 0, 1, 1, 1 } };
+                    matrices = new int[2][];
+                    matrices[0] = new int[9] { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+                    matrices[1] = new int[9] { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
                     break;
                 case Method.Sobel:
                     numberOfMatrices = 2;
                     matrixSize = 3;
-                    matrices = new int[2, 9] { { 1, 0, -1, 2, 0, -2, 1, 0, -1 }, { -1, -2, -1, 0, 0, 0, 1, 2, 1 } };
+                    matrices = new int[2][];
+                    matrices[0] = new int[9] { 1, 0, -1, 2, 0, -2, 1, 0, -1 };
+                    matrices[1] = new int[9] { -1, -2, -1, 0, 0, 0, 1, 2, 1 };
                     break;
                 case Method.Scharr:
                     numberOfMatrices = 2;
                     matrixSize = 3;
-                    matrices = new int[2, 9] { { -3, 0, 3, -10, 0, 10, -3, 0, 3 }, { -3, -10, -3, 0, 0, 0, 3, 10, 3 } };
+                    matrices = new int[2][];
+                    matrices[0] = new int[9] { -3, 0, 3, -10, 0, 10, -3, 0, 3 };
+                    matrices[1] = new int[9] { -3, -10, -3, 0, 0, 0, 3, 10, 3 };
                     break;
                 case Method.Lowpass:
-                    divider = 9;
                     numberOfMatrices = 1;
-                    matrixSize = 3;
-                    matrices = new int[1, 9] { { 1, 1, 1, 1, 1, 1, 1, 1, 1 } };
+                    matrixSize = mSize;                   
+                    matrices = new int[1][];
+                    matrices[0] = matrix1;
+                    divider = CalculateDivider(matrices[0], matrixSize);
                     break;
                 case Method.Highpass:
-                    divider = 1;
                     numberOfMatrices = 1;
-                    matrixSize = 3;
-                    matrices = new int[1, 9] { { 0, -1, 0, -1, 5, -1, 0, -1, 0 } };
+                    matrixSize = mSize;
+                    matrices = new int[1][];
+                    matrices[0] = matrix1;
+                    divider = CalculateDivider(matrices[0],matrixSize);
                     break;
                 case Method.Median:
                     matrixSize = 3;
                     break;
                 case Method.Gauss:
-                    matrixSize = 23;
-                    matrix = CalculateGaussMatrix(matrixSize, 5);
+                    matrixSize = mSize;
+                    matrix = CalculateGaussMatrix(matrixSize, sValue);
                     break;
                 case Method.Grayscale:
+                    matrixSize = 1;
+                    break;
+                case Method.Grayscale2:
                     matrixSize = 1;
                     break;
                 default:
                     divider = 12;
                     numberOfMatrices = 1;
                     matrixSize = 3;
-                    matrices = new int[1, 9] { { 1, 1, 1, 1, 4, 1, 1, 1, 1 } };
+                    matrices = new int[1][];
+                    matrices[0] = new int[9] { 1, 1, 1, 1, 4, 1, 1, 1, 1 };
                     break;
             }
             pixels = new Pixel[matrixSize][];
             writer.WriteHeader(reader.ReadHeader());
             writer.WriteDIBHeader(reader.ReadDIBHeader());
-            byte pxl;
-            for(int i = 0; i < matrixSize; ++i)                                                                                 //read initial lines we will swap them after
-            {                                                                                                                   //every iteration e.g. with mask 3x3
-                pixels[i] = reader.ReadLineOfPixels(i - matrixSize / 2);                                                        // we start with lines -1,0,1
-            }
-            if(method == Method.Grayscale2)
+            if (method == Method.Grayscale2)
             {
                 writer.ChangeHeaderFor8Bit();
+            }
+            CalculateAllPixels(numberOfMatrices, matrixSize, matrices, divider, matrix);
+            writer.Close();
+            reader.Close();
+            long end = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+            double diff = (end - start)/1000;
+            
+            callInfo = MainWindow.OpenInfoWindow;
+            App.Current.Dispatcher.BeginInvoke(new Action(()=>callInfo(Status.Done, diff)));
+            CallEnableProcessButton callEnable = mainWindow.EnableProcessButton;
+            App.Current.Dispatcher.BeginInvoke(new Action(() => callEnable()));
+        }
+        public void CalculateAllPixels(int numberOfMatrices, int matrixSize, int[][] matrices, int divider, double[] matrix)
+        {
+            byte pxl;
+            for (int i = 0; i < matrixSize; ++i)                                                                                 //read initial lines we will swap them after
+            {                                                                                                                   //every iteration e.g. with mask 3x3
+                pixels[i] = reader.ReadLineOfPixels(i - matrixSize / 2);                                                        // we start with lines -1,0,1
             }
             CallUpdateProgress callUpdate = mainWindow.UpdateProgress;
             for (int i = 0; i < reader.GetHeight(); ++i)
             {
                 double progress = i * 100 / reader.GetHeight();
-
-                App.Current.Dispatcher.Invoke(new Action (() => callUpdate(progress)));
+                App.Current.Dispatcher.Invoke(new Action(() => callUpdate(progress)));
                 for (int j = 0; j < reader.GetWidth(); ++j)
                 {
                     Pixel pixel;
@@ -139,10 +170,10 @@ namespace DigitalImageProcessing
                     }
                     else if (method == Method.Gauss)
                     {
-                        pixel = CalculateGaussPixel(matrixSize,matrix,j, i);
+                        pixel = CalculateGaussPixel(matrixSize, matrix, j, i);
                         writer.WritePixel(pixel, j, i);
                     }
-                    else if(method == Method.Grayscale2)
+                    else if (method == Method.Grayscale2)
                     {
                         pxl = CalculateRGBToGrayscalePixel(j);
                         writer.Write8BitPixel(pxl, j, i);
@@ -158,37 +189,29 @@ namespace DigitalImageProcessing
                         pixel = CalculatePixel(numberOfMatrices, matrixSize, matrices, divider, j, i);
                         writer.WritePixel(pixel, j, i);
                     }
-                    
+
                 }
-                for(int j = 0; j < matrixSize; ++j)                                                                             //swaping lines and reading a new one
+                for (int j = 0; j < matrixSize; ++j)                                                                             //swaping lines and reading a new one
                 {
                     if (j == matrixSize - 1)
                     {
-                        pixels[j]=reader.ReadLineOfPixels(i + matrixSize / 2);
+                        pixels[j] = reader.ReadLineOfPixels(i + matrixSize / 2);
                     }
                     else
                     {
-                        pixels[j] = pixels[j+1];
+                        pixels[j] = pixels[j + 1];
                     }
                 }
             }
-            writer.Close();
-            reader.Close();
-            long end = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            double diff = (end - start)/1000;
-            
-            callInfo = MainWindow.OpenInfoWindow;
-            App.Current.Dispatcher.BeginInvoke(new Action(()=>callInfo(Status.Done, diff)));
-            App.Current.Dispatcher.BeginInvoke(new Action(() => { mainWindow.process.IsEnabled = true; }));
         }
-        public Pixel CalculatePixel(int numberOfMatrices, int matrixSize, int[,] matrices, int divider, int x, int y)
+        public Pixel CalculatePixel(int numberOfMatrices, int matrixSize, int[][] matrices, int divider, int x, int y)
         {
             byte[] tmp = new byte[3];
             int x1, middleIndex;
             middleIndex = matrixSize * matrixSize / 2;
-            int[] sumB = new int[numberOfMatrices];
-            int[] sumG = new int[numberOfMatrices];
-            int[] sumR = new int[numberOfMatrices];
+            double[] sumB = new double[numberOfMatrices];
+            double[] sumG = new double[numberOfMatrices];
+            double[] sumR = new double[numberOfMatrices];
             for (int i = 0; i < numberOfMatrices; ++i)
             {
                 sumB[i] = 0;
@@ -209,9 +232,9 @@ namespace DigitalImageProcessing
                 }
                 for (int j = 0; j < numberOfMatrices; ++j)
                 {                   
-                    sumB[j] += pxl.B * matrices[j, i];
-                    sumG[j] += pxl.G * matrices[j, i];
-                    sumR[j] += pxl.R * matrices[j, i];
+                    sumB[j] += pxl.B * matrices[j][i];
+                    sumG[j] += pxl.G * matrices[j][i];
+                    sumR[j] += pxl.R * matrices[j][i];
                 }
             }
             for (int i = 0; i < numberOfMatrices; ++i)
@@ -225,9 +248,9 @@ namespace DigitalImageProcessing
                 int sB = 0, sG = 0, sR = 0;
                 for (int i = 0; i < numberOfMatrices; ++i)
                 {
-                    sB += sumB[i] * sumB[i];
-                    sG += sumG[i] * sumG[i];
-                    sR += sumR[i] * sumR[i];
+                    sB += (int)sumB[i] * (int)sumB[i];
+                    sG += (int)sumG[i] * (int)sumG[i];
+                    sR += (int)sumR[i] * (int)sumR[i];
 
                 }
                 sB = ((int)Math.Sqrt(sB));
@@ -235,32 +258,22 @@ namespace DigitalImageProcessing
                 sR = ((int)Math.Sqrt(sR));
                 if (sB > 255)
                 {
-                    tmp[2] = 255;
+                    sB = 255;
                 }
-                else
-                {
                     tmp[2] = (byte)sB;
-                }
                 if (sG > 255)
                 {
-                    tmp[1] = 255;
+                    sG = 255;
                 }
-                else
-                {
                     tmp[1] = (byte)sG;
-                }
                 if (sR > 255)
                 {
-                    tmp[0] = 255;
+                    sR = 255;
                 }
-                else
-                {
                     tmp[0] = (byte)sR;
-                }
-
             }
             else
-            {
+            {                                                                                                                           
                 if (sumB[0] < 0)
                 {
                     sumB[0] = 0;
@@ -385,6 +398,16 @@ namespace DigitalImageProcessing
             int t = (int)(0.299 * tmp.R + 0.587 * tmp.G + 0.114 * tmp.B);
             pixel = (byte)t;
             return pixel;
+        }
+        private int CalculateDivider(int[] matrix, int matrixSize)
+        {
+            int div = 0;
+            for(int i = 0; i < matrixSize * matrixSize; ++i)
+            {
+                div += (int)matrix[i];
+            }
+            if (div == 0) div = 1;
+            return div;
         }
     }
 }

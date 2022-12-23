@@ -5,14 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DigitalImageProcessing"
         mc:Ignorable="d"
-        Title="MainWindow" Height="500" Width="400">
+        Title="MainWindow" Height="600" Width="400">
     <Grid>
-        <StackPanel Name="panel" Margin="0,50,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Width="160" Height="430">
+        <StackPanel Name="panel" Margin="0,50,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Width="160" Height="530">
             <Label Content="Pick a BMP file:"  Height="26" Target="{Binding ElementName=button}" ></Label>
             <Button HorizontalAlignment="Center" VerticalAlignment="Top"  Width="160" Name="button" Click="button_Click" >Open File</Button>
             <Image Name="imgviewer" Width="160" Height="125"/>
             <Label Content="Pick an algorithm:" Target="{Binding ElementName=methods}" Height="26"></Label>
-            <ComboBox Name="methods" Width="160" Height="20" SelectedValuePath="Content">
+            <ComboBox Name="methods" Width="160" Height="20" SelectedValuePath="Content" SelectionChanged="methods_SelectionChanged">
                 <ComboBoxItem Name="roberts" >Roberts Cross</ComboBoxItem>
                 <ComboBoxItem Name="prewitt" >Prewitt</ComboBoxItem>
                 <ComboBoxItem Name="sobel" >Sobel</ComboBoxItem>
@@ -20,11 +20,13 @@
                 <ComboBoxItem Name="lowpass" >Low-pass filter</ComboBoxItem>
                 <ComboBoxItem Name="highpass" >High-pass filter</ComboBoxItem>
                 <ComboBoxItem Name="median" >Median filter</ComboBoxItem>
-                <ComboBoxItem Name="gauss" >Gauss filter</ComboBoxItem>
+                <ComboBoxItem Name="gauss"  >Gauss filter</ComboBoxItem>
                 <ComboBoxItem Name="grayscale" >RGB to Grayscale(24bit)</ComboBoxItem>
                 <ComboBoxItem Name="grayscale2" >RGB to Grayscale(8bit)</ComboBoxItem>
             </ComboBox>
-            <Label Content="Output file name:" Target="{Binding ElementName=name}" Margin="0,30,0,0"></Label>
+            <Button Name="values"  Click="values_Click"  Margin="0,10,0,0" Visibility="Hidden">Select values</Button>
+            <Button Name="flters" Click="flters_Click" Visibility="Hidden">Select filter</Button>
+            <Label Content="Output file name:" Target="{Binding ElementName=name}" Margin="0,0,0,0"></Label>
             <TextBox Name="name"></TextBox>
             <Label Content="Pick output file directory:" Target="{Binding ElementName=directory}"></Label>
             <Button Name="directory" Click="directory_Click" >Pick directory</Button>
